@@ -1,17 +1,16 @@
 import { Request } from "express";
-import { generateAccessToken, ILoginCredentials } from "./auth";
+import { generateAccessToken, LoginCredentials } from "./auth";
 import { isPasswordMatch } from "@/core/utils/password.util";
-import { AppError } from "@/core/types/error";
+import { AppError } from "@/core/utils/error.util";
+import { UserDTOType } from "../user/user";
 import userRepository from "../user/user.repository";
-import { ISafeUser } from "../user/user";
 
 export const handleLogin = async (
-  req: Request<any, any, ILoginCredentials>
-): Promise<{ accessToken: string; user: ISafeUser }> => {
+  req: Request<any, any, LoginCredentials>,
+): Promise<{ accessToken: string; user: UserDTOType }> => {
   const { identifier, loginPassword } = req.body;
 
-  console.log("logging in");
-  const user = await userRepository.findOne({
+  const user = await userRepository.getUser({
     filter: { $or: [{ email: identifier }, { username: identifier }] },
   });
 
@@ -22,8 +21,8 @@ export const handleLogin = async (
   if (!match) throw new AppError(401, "Invalid Credentials", "INVALID_CREDENTIALS");
 
   const { password, ...safe } = user;
-  const safeUser: ISafeUser = safe;
-  const accessToken = generateAccessToken(safeUser);
+  const safeUser: UserDTOType = safe;
+  const accessToken = generateAccessToken(safeUser, safeUser.role);
 
   return { accessToken, user: safeUser };
 };

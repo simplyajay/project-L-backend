@@ -1,6 +1,8 @@
 import { Types } from "mongoose";
+import z from "zod";
 
-export interface ICredit {
+export type CreditType = {
+  _id: Types.ObjectId;
   clientId: Types.ObjectId;
   principalAmount: number;
   interestRate: number;
@@ -8,62 +10,61 @@ export interface ICredit {
   balance: number;
   creditDate: Date;
   dueDate: Date;
-  settlements: ISettlement[];
-  history: ICreditHistory[];
-}
-
-export type IUpdateCreditPayload = Omit<
-  ICredit,
-  "clientId" | "principalAmount" | "history" | "settlements"
-> & {
-  updateDate: Date;
+  settlements: SettlementType[];
+  history: HistoryType[];
 };
 
-export interface ISettlement {
+export type SettlementType = {
   _id: Types.ObjectId;
   settlementAmount: number;
   interestAmount: number;
   settlementDate: Date;
-}
+};
 
-export interface ICreditHistory {
+export type HistoryType = {
+  _id: Types.ObjectId;
   type: "Settlement" | "Adjustment";
   date: Date;
   note: string;
-}
-
-export const adjustmentLabels: Record<string, string> = {
-  balance: "Balance",
-  principalAmount: "Principal Amount",
-  interestRate: "Interest Rate",
-  creditDate: "Credit Date",
-  dueDate: "Due Date",
 };
 
-export interface ICreditAddSettlement {
-  $set: Partial<{ balance: number; dueDate: Date; currentInterestAmount: number }>;
-  $push: { settlements: ISettlement; history: ICreditHistory };
-}
+export const AddCreditSchema = z
+  .object({
+    principalAmount: z.number().positive(),
+    interestRate: z.number().nonnegative(),
+    creditDate: z.coerce.date(),
+  })
+  .strict();
 
-export type ISafeCredit = Omit<ICredit, "clientId"> & { clientId?: never };
+export const updateCreditSchema = z
+  .object({
+    principalAmount: z.number().positive().optional(),
+    interestRate: z.number().nonnegative().optional(),
+    balance: z.number().nonnegative().optional(),
+    creditDate: z.coerce.date().optional(),
+    updateDate: z.coerce.date().optional(),
+  })
+  .strict();
 
-export const calculateDueDate = (date: Date) => {
-  const dueDate = new Date(date);
-  dueDate.setMonth(dueDate.getMonth() + 1);
-  return dueDate;
-};
+export const AdminUpdateCreditSchema = updateCreditSchema
+  .omit({ updateDate: true })
+  .extend({ clientId: z.string().optional() })
+  .strict();
 
-export const calculateNewBalance = (
-  credit: ICredit,
-  newSettlement: ISettlement
-): { newBalance: number; newInterestAmount: number } => {
-  const currentBalance = credit.balance;
+export const AddSettlementSchema = z
+  .object({
+    settlementAmount: z.number().positive(),
+    interestAmount: z.number().nonnegative(),
+    settlementDate: z.coerce.date(),
+  })
+  .strict();
 
-  const paidAmount = newSettlement.settlementAmount;
+export type CreditSnapshotType = Pick<CreditType, "_id" | "principalAmount" | "balance" | "creditDate" | "dueDate">;
 
-  const newBalance = Math.max(currentBalance - paidAmount, 0);
+export type AddCreditPayload = z.infer<typeof AddCreditSchema>;
 
-  const newInterestAmount = Math.max((newBalance * credit.interestRate) / 100, 0);
+export type AdminUpdateCreditPayload = z.infer<typeof AdminUpdateCreditSchema>;
 
-  return { newBalance, newInterestAmount };
-};
+export type UpdateCreditPayload = z.infer<typeof updateCreditSchema>;
+
+export type AddSettlementPayload = z.infer<typeof AddSettlementSchema>;

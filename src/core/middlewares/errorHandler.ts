@@ -1,14 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError, FieldError } from "../types/error";
+import { AppError, FieldError } from "../utils/error.util";
 
-export const ErrorHandler = (
-  err: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  // Default value
-
+export const ErrorHandler = (err: unknown, req: Request, res: Response, next: NextFunction): void => {
   let status = 500;
   let code = "UNEXPECTED_ERROR";
   let message = "Unexpected Server Error";

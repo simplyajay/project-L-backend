@@ -1,20 +1,21 @@
 import express from "express";
-import {
-  createCredit,
-  getAllCredits,
-  getCreditById,
-  updateCreditDetailsById,
-  addSettlementToCreditById,
-  deleteCreditById,
-} from "./credit.controller";
+import * as AdminController from "./controller/credit.admin.controller";
+import { validateSchema } from "@/core/middlewares/validation";
+import { AdminUpdateCreditSchema } from "./credit";
+import authenticate from "@/core/middlewares/authentication";
+import authorize from "@/core/middlewares/authorization";
 
-const creditRouter = express.Router();
+const adminCreditRouter = express.Router();
 
-creditRouter.get("/", getAllCredits);
-creditRouter.post("/register", createCredit);
-creditRouter.get("/:id", getCreditById);
-creditRouter.patch("/:id", updateCreditDetailsById);
-creditRouter.patch("/:id/new-payment", addSettlementToCreditById);
-creditRouter.delete("/:id", deleteCreditById);
+adminCreditRouter.get("/", authenticate, authorize("admin"), AdminController.getAll);
+adminCreditRouter.get("/:id", authenticate, authorize("admin"), AdminController.getOne);
+adminCreditRouter.patch(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  validateSchema(AdminUpdateCreditSchema),
+  AdminController.updateOne,
+);
+adminCreditRouter.delete("/:id", authenticate, authorize("admin"), AdminController.deleteOne);
 
-export default creditRouter;
+export { adminCreditRouter };
