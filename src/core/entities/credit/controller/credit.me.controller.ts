@@ -48,7 +48,7 @@ export const getAll = async (req: Request, res: Response): Promise<Response> => 
   return res.status(200).json(response);
 };
 
-export const getOne = async (req: Request, res: Response): Promise<Response> => {
+export const getOne = async (req: Request<{ creditId: string }>, res: Response): Promise<Response> => {
   const clientId = req.clientId;
   const { creditId } = req.params;
 
@@ -58,7 +58,7 @@ export const getOne = async (req: Request, res: Response): Promise<Response> => 
 };
 
 export const updateOne = async (
-  req: Request<any, any, UpdateCreditPayload & { updateDate?: Date }>,
+  req: Request<{ creditId: string }, any, UpdateCreditPayload & { updateDate?: Date }>,
   res: Response,
 ): Promise<Response> => {
   const clientId = req.clientId;
@@ -66,7 +66,10 @@ export const updateOne = async (
 
   const { updateDate, ...updateData } = req.body;
 
-  const currentCredit = await creditRepository.getCredit({ filter: { clientId, _id: creditId } });
+  const currentCredit = await creditRepository.getCredit({
+    filter: { clientId: new Types.ObjectId(clientId), _id: new Types.ObjectId(creditId) },
+  });
+
   if (!currentCredit) throw new AppError(404, "Resource Not Found", "NO_RESOURCE");
 
   let currentInterestAmount: number = currentCredit.currentInterestAmount;
@@ -126,7 +129,7 @@ export const updateOne = async (
   return res.status(200).json(response);
 };
 
-export const deleteOne = async (req: Request, res: Response): Promise<Response> => {
+export const deleteOne = async (req: Request<{ creditId: string }>, res: Response): Promise<Response> => {
   const clientId = req.clientId;
   const { creditId } = req.params;
 
@@ -135,13 +138,18 @@ export const deleteOne = async (req: Request, res: Response): Promise<Response> 
   return res.status(200).json(response);
 };
 
-export const addSettlement = async (req: Request<any, any, AddSettlementPayload>, res: Response): Promise<Response> => {
+export const addSettlement = async (
+  req: Request<{ creditId: string }, any, AddSettlementPayload>,
+  res: Response,
+): Promise<Response> => {
   const clientId = req.clientId;
   const { creditId } = req.params;
 
   const settlementData = req.body;
 
-  const currentCredit = await creditRepository.getCredit({ filter: { clientId, _id: creditId } });
+  const currentCredit = await creditRepository.getCredit({
+    filter: { clientId: new Types.ObjectId(clientId), _id: new Types.ObjectId(creditId) },
+  });
   if (!currentCredit) throw new AppError(404, "Resource Not Found", "NO_RESOURCE");
 
   const settlementDate = parseDate(settlementData.settlementDate);

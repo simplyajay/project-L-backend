@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import mongoose, { PipelineStage, Types } from "mongoose";
-import { ClientSummaryType, ClientType, UpdateClientPayload } from "../client";
+import { ClientSummaryType, ClientType, DeleteClientPayload, UpdateClientPayload } from "../client";
 import { AppError } from "@/core/utils/error.util";
 import { CreateClientPayload } from "../client";
 import { PhoneSchema } from "../../user/user";
 import clientRepository from "../client.repository";
 import creditRepository from "../../credit/credit.repository";
+import userRepository from "../../user/user.repository";
+import { isPasswordMatch } from "@/core/utils/password.util";
 
 export const create = async (req: Request<any, any, CreateClientPayload>, res: Response): Promise<Response> => {
   const userId = req.user?.id;
@@ -151,14 +153,23 @@ export const updateOne = async (req: Request<any, any, UpdateClientPayload>, res
   return res.status(200).json(response);
 };
 
-export const deleteOne = async (req: Request, res: Response): Promise<Response> => {
+export const deleteOne = async (req: Request<any, any, DeleteClientPayload>, res: Response): Promise<Response> => {
   const userId = req.user?.id;
   const { id } = req.params;
+  const { password } = req.body;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+    const user = await userRepository.getUser({ filter: { _id: userId } });
+
+    const isMatch = await isPasswordMatch(password, user.password);
+
+    console.log(isMatch);
+
+    if (!isMatch) throw new AppError(401, "Invalid Password", "INVALID_CREDENTIALS");
+
     const deletedClient = await clientRepository.deleteClient({ filter: { userId, _id: id }, options: { session } });
 
     if (!deletedClient) throw new AppError(404, "Client not Found", "NOT_FOUND");

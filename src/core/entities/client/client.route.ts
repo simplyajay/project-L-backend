@@ -7,7 +7,7 @@ import * as MyCreditController from "../credit/controller/credit.me.controller";
 import verifyClient from "@/core/middlewares/verification";
 import { AddCreditSchema, AddSettlementSchema, updateCreditSchema } from "../credit/credit";
 import { validateSchema } from "@/core/middlewares/validation";
-import { AdminUpdateClientSchema, CreateClientSchema, UpdateClientSchema } from "./client";
+import { AdminUpdateClientSchema, CreateClientSchema, DeleteClientSchema, UpdateClientSchema } from "./client";
 
 const clientUserRouter = express.Router();
 const clientAdminRouter = express.Router();
@@ -17,7 +17,7 @@ clientUserRouter.post("/", authenticate, validateSchema(CreateClientSchema), MyC
 clientUserRouter.get("/", authenticate, MyClientController.getAll); // get all clients summarized
 clientUserRouter.get("/:id", authenticate, MyClientController.getOne); // get specific client owned by user
 clientUserRouter.patch("/:id", authenticate, validateSchema(UpdateClientSchema), MyClientController.updateOne); // update specific client owned by user
-clientUserRouter.delete("/:id", authenticate, MyClientController.deleteOne); // delete specific client ownded by user
+clientUserRouter.post("/:id/delete", authenticate, validateSchema(DeleteClientSchema), MyClientController.deleteOne); // delete specific client ownded by user
 
 clientUserRouter.post(
   "/:clientId/credits",

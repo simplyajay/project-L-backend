@@ -1,21 +1,19 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError, FieldError } from "../utils/error.util";
+import { AppError, FieldError, FieldErrors } from "../utils/error.util";
 
 export const ErrorHandler = (err: unknown, req: Request, res: Response, next: NextFunction): void => {
   let status = 500;
   let code = "UNEXPECTED_ERROR";
   let message = "Unexpected Server Error";
-  let keyValue = undefined;
+  let fieldErrors: FieldErrors | undefined = undefined;
 
   if (err instanceof AppError || err instanceof FieldError) {
-    if (err instanceof FieldError) keyValue = err.keyValue;
+    if (err instanceof FieldError) fieldErrors = err.fieldErrors;
 
     status = err.status;
     message = err.message;
     code = err.code;
   }
 
-  console.log(err);
-
-  res.status(status).json({ message, code, ...(keyValue !== undefined && { keyValue }) });
+  res.status(status).json({ message, code, ...(fieldErrors !== undefined && { fieldErrors }) });
 };

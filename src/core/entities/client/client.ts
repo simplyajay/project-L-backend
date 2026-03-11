@@ -22,12 +22,12 @@ export type ClientType = {
 
 export const CreateClientSchema = z
   .object({
-    firstname: z.string().min(2),
-    middlename: z.string().min(2).optional(),
-    lastname: z.string().min(2),
-    email: z.email().optional(),
+    firstname: z.string("First name is required.").min(2, { error: "First name must be atleast 2 characters." }),
+    middlename: z.string().min(2, { error: "Middle name must be atleast 2 characters." }).optional(),
+    lastname: z.string("Last name is required.").min(2, { error: "Last name must be atleast 2 characters." }),
+    email: z.email("Enter a valid email address").optional(),
     facebook: z.string().optional(),
-    address: z.string(),
+    address: z.string("Address is required"),
     phone: PhoneInputSchema,
     otherPhones: z.array(PhoneInputSchema).optional(),
   })
@@ -35,9 +35,9 @@ export const CreateClientSchema = z
 
 export const UpdateClientSchema = z
   .object({
-    firstname: z.string().min(2).optional(),
-    middlename: z.string().min(2).optional(),
-    lastname: z.string().min(2).optional(),
+    firstname: z.string().min(2, { error: "First name must be atleast 2 characters." }).optional(),
+    middlename: z.string().min(2, { error: "Middle name must be atleast 2 characters." }).optional(),
+    lastname: z.string().min(2, { error: "Last name must be atleast 2 characters." }).optional(),
     email: z.email().optional(),
     facebook: z.string().optional(),
     address: z.string().optional(),
@@ -49,6 +49,8 @@ export const UpdateClientSchema = z
 export const AdminUpdateClientSchema = UpdateClientSchema.extend({
   userId: z.string().optional(),
 }).strict();
+
+export const DeleteClientSchema = z.object({ password: z.string("Invalid Password") }).strict();
 
 export type ClientSummaryType = {
   _id: Types.ObjectId;
@@ -65,3 +67,5 @@ export type CreateClientPayload = z.infer<typeof CreateClientSchema>;
 export type UpdateClientPayload = z.infer<typeof UpdateClientSchema>;
 
 export type AdminUpdateClientPayload = z.infer<typeof AdminUpdateClientSchema>;
+
+export type DeleteClientPayload = z.infer<typeof DeleteClientSchema>;

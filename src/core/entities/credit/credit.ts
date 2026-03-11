@@ -30,7 +30,7 @@ export type HistoryType = {
 
 export const AddCreditSchema = z
   .object({
-    principalAmount: z.number().positive(),
+    principalAmount: z.number("Enter a valid amount.").positive(),
     interestRate: z.number().nonnegative(),
     creditDate: z.coerce.date(),
   })

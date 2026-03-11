@@ -30,7 +30,7 @@ export const PhoneInputSchema = z
     if (!number || !number.isValid()) {
       ctx.addIssue({
         code: "custom",
-        message: "Invalid mobile phone number",
+        message: "Invalid mobile number.",
         path: ["value"],
       });
       return;
@@ -67,13 +67,15 @@ const PreferenceSchema = z
 
 export const AddUserSchema = z
   .object({
-    username: z.string().min(4),
-    password: z.string().min(8),
-    firstname: z.string().min(2),
-    middlename: z.string().min(2).optional(),
-    lastname: z.string().min(2),
+    username: z.string("Username is required.").min(4, { error: "Username must be atleast 4 characters." }),
+    password: z.string("Password is required.").min(8, { error: "Password must be atleast 8 characters." }),
+    firstname: z.string("First name is required.").min(2, { error: "First name must be atleast 2 characters." }),
+    middlename: z.string().min(2, { error: "Middle name must be atleast 2 characters." }).optional(),
+    lastname: z.string("Last name is required.").min(2, { error: "Last name must be atleast 2 characters." }),
     nickname: z.string().optional(),
-    email: z.email(),
+    email: z
+      .string("Email is required.")
+      .refine((val) => z.email().safeParse(val).success, { error: "Invalid email address" }),
     phone: PhoneInputSchema,
     role: z.enum(["admin", "user"]).optional(),
     preference: PreferenceSchema.optional(),
@@ -82,12 +84,14 @@ export const AddUserSchema = z
 
 export const UpdateUserSchema = z
   .object({
-    username: z.string().min(4).optional(),
-    firstname: z.string().min(2).optional(),
-    middlename: z.string().min(2).optional(),
-    lastname: z.string().min(2).optional(),
+    username: z.string().min(4, { error: "Username must be atleast 4 characters." }).optional(),
+    firstname: z.string().min(2, { error: "First name must be atleast 2 characters." }).optional(),
+    middlename: z.string().min(2, { error: "Middle name must be atleast 2 characters." }).optional(),
+    lastname: z.string().min(2, { error: "Last name must be atleast 2 characters." }).optional(),
     nickname: z.string().optional(),
-    email: z.email().optional(),
+    email: z
+      .string("Email is required.")
+      .refine((val) => z.email().safeParse(val).success, { error: "Invalid email address" }),
     phone: PhoneInputSchema.optional(),
     preference: PreferenceSchema.optional(),
   })
@@ -95,8 +99,8 @@ export const UpdateUserSchema = z
 
 export const UpdatePasswordSchema = z
   .object({
-    currentPassword: z.string().min(8),
-    newPassword: z.string().min(8),
+    currentPassword: z.string().min(8, { error: "Password must be atleast 8 characters." }),
+    newPassword: z.string().min(8, { error: "Password must be atleast 8 characters." }),
   })
   .strict();
 
