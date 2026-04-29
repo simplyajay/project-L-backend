@@ -1,25 +1,25 @@
 import mongoose, { Schema, Model } from "mongoose";
-import { ICredit, ICreditHistory, ISettlement } from "./credit";
+import { CreditType, HistoryType, SettlementType } from "./credit";
 
-const SettlementSchema = new Schema<ISettlement>(
+const SettlementSchema = new Schema<SettlementType>(
   {
     settlementAmount: { type: Number, required: true },
     interestAmount: { type: Number, required: true },
     settlementDate: { type: Date, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const HistorySchema = new Schema<ICreditHistory>(
+const HistorySchema = new Schema<HistoryType>(
   {
     type: { type: String, required: true },
     date: { type: Date, required: true },
     note: { type: String, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const CreditSchema = new Schema<ICredit>(
+const CreditSchema = new Schema<CreditType>(
   {
     clientId: { type: Schema.Types.ObjectId, required: true },
     principalAmount: { type: Number, required: true },
@@ -31,10 +31,10 @@ const CreditSchema = new Schema<ICredit>(
     settlements: { type: [SettlementSchema], default: [] },
     history: { type: [HistorySchema], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 CreditSchema.index({ clientId: 1 });
 
-const CreditModel: Model<ICredit> = mongoose.model<ICredit>("Credit", CreditSchema);
+const CreditModel: Model<CreditType> = mongoose.model<CreditType>("Credit", CreditSchema);
 export default CreditModel;
