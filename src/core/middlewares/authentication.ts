@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { IJwtPayload } from "../entities/auth/auth";
-import { AppError } from "../types/error";
+import { JWTPayload } from "../entities/auth/auth";
+import { AppError } from "../utils/error.util";
 import env from "@/config/env";
 import jwt from "jsonwebtoken";
 
 const secret = env.get("ACCESS_TOKEN_SECRET");
 
-const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
+const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   if (!secret) return next(new AppError(401, "Unauthorized: No token provided", "UNAUTHORIZED"));
 
   const authHeader = req.headers.authorization;
@@ -15,16 +15,15 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction): voi
     return next(new AppError(401, "Unauthorized: No token provided", "UNAUTHORIZED"));
   }
 
-  //token is from frontend
   const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, secret) as unknown;
-    req.user = decoded as IJwtPayload;
+    req.user = decoded as JWTPayload;
     next();
   } catch {
     return next(new AppError(401, "Unauthorized: No token provided", "UNAUTHORIZED"));
   }
 };
 
-export default authenticateToken;
+export default authenticate;
