@@ -25,10 +25,9 @@ class DatabaseConfig {
     if (this.connected || this.connecting) return;
     this.connecting = true;
     try {
-      console.log('Connecting...')
-      await mongoose.connect(this.url);
+      console.log("Connecting...");
+      await mongoose.connect(this.url, { autoIndex: process.env.NODE_ENV !== "production" });
       this.currentRetries = 0; // reset on successful connection
-
     } catch (error) {
       if (error instanceof Error) {
         console.error("MongoDb error: Initilization failed: ", error.message);
