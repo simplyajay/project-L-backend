@@ -1,22 +1,45 @@
-import { Model, FilterQuery, ProjectionType, QueryOptions, Types, UpdateQuery } from "mongoose";
+import {
+  Model,
+  FilterQuery,
+  ProjectionType,
+  QueryOptions,
+  UpdateQuery,
+  DeleteResult,
+  MongooseBaseQueryOptions,
+  ClientSession,
+} from "mongoose";
 import { handleMongoDuplicateError } from "../utils/error.util";
 
-interface IDocumentOperationParams<T> {
+export type GetOperationParams<T> = {
   /** Query conditions to find the document. */
   filter?: FilterQuery<T>;
   /** Fields to include or exclude in the result. */
   projection?: ProjectionType<T>;
   /**  Additional Query options like sort, limit, skip. */
   options?: QueryOptions<T>;
+};
+
+export type UpdateOperationParams<T> = {
+  /** Query conditions to find the document. */
+  filter?: FilterQuery<T>;
   /**  Data to replace the original */
   data: UpdateQuery<T>;
-}
+  /**  Additional Query options like sort, limit, skip. */
+  options?: QueryOptions<T>;
+};
 
-export interface IGenericOperationParams<T> {
-  filter?: Partial<Record<keyof T, any>>;
-  projection?: Partial<Record<keyof T, any>>;
-  options?: Record<string, any>;
-}
+export type DeleteOperationParams<T> = {
+  /** Query conditions to find the document. */
+  filter?: FilterQuery<T>;
+  /**  Additional Query options like sort, limit, skip. */
+  options?: QueryOptions<T> & { session?: ClientSession };
+};
+
+export type DeleteManyParams<T> = {
+  /** Query conditions to find the document. */
+  filter?: FilterQuery<T>;
+  options?: MongooseBaseQueryOptions<T> & { session?: ClientSession };
+};
 
 class BaseRepository<T> {
   protected model: Model<T>;
@@ -25,7 +48,7 @@ class BaseRepository<T> {
     this.model = model;
   }
 
-  async create(data: Partial<T>): Promise<T> {
+  protected async create(data: Partial<T>): Promise<T> {
     try {
       const doc = await this.model.create(data); // this returns HydratedDocument and not Plain object.
       return doc.toObject(); // toObject() is part of the HydratedDocument. toObject is the T
@@ -35,15 +58,9 @@ class BaseRepository<T> {
     }
   }
 
-  async findOne({
-    filter = {},
-    projection = {},
-    options,
-  }: Omit<IDocumentOperationParams<T>, "data"> = {}): Promise<T | null> {
+  protected async findOne({ filter, projection, options }: GetOperationParams<T>): Promise<T | null> {
     try {
-      const finalProjection =
-        projection && typeof projection === "object" ? { __v: 0, ...projection } : { __v: 0 };
-      const doc = await this.model.findOne(filter, finalProjection, { ...options, lean: true });
+      const doc = await this.model.findOne(filter, projection, { ...options, lean: true });
 
       return doc as T;
     } catch (error) {
@@ -51,26 +68,16 @@ class BaseRepository<T> {
     }
   }
 
-  async findAll({
-    filter = {},
-    projection = {},
-    options = {},
-  }: Omit<IDocumentOperationParams<T>, "data"> = {}): Promise<T[]> {
+  protected async findAll({ filter = {}, projection, options }: GetOperationParams<T> = {}): Promise<T[]> {
     try {
-      const finalProjection =
-        projection && typeof projection === "object" ? { __v: 0, ...projection } : { __v: 0 };
-      const docs = await this.model.find(filter, finalProjection, { ...options, lean: true });
+      const docs = await this.model.find(filter, projection, { ...options, lean: true });
       return docs as T[];
     } catch (error) {
       throw error;
     }
   }
 
-  async updateOne({
-    filter = {},
-    data,
-    options = {},
-  }: Omit<IDocumentOperationParams<T>, "projection">): Promise<T | null> {
+  protected async updateOne({ filter, data, options }: UpdateOperationParams<T>): Promise<T | null> {
     try {
       const doc = await this.model.findOneAndUpdate(filter, data, {
         new: true,
@@ -80,17 +87,24 @@ class BaseRepository<T> {
 
       return doc as T;
     } catch (error) {
+      handleMongoDuplicateError(error);
       throw error;
     }
   }
 
-  async deleteOne({
-    filter,
-    options,
-  }: Omit<IDocumentOperationParams<T>, "data" | "projection"> = {}): Promise<T | null> {
+  protected async deleteOne({ filter, options }: DeleteOperationParams<T> = {}): Promise<T | null> {
     try {
       const doc = await this.model.findOneAndDelete(filter, { ...options, lean: true });
       return doc as T;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  protected async deleteMany({ filter, options }: DeleteManyParams<T>): Promise<DeleteResult> {
+    try {
+      const doc = await this.model.deleteMany(filter, options);
+      return doc;
     } catch (error) {
       throw error;
     }
